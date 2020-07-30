@@ -23,6 +23,9 @@
 !/tmp/pids/
 !/tmp/pids/.keep
 
+/db-data
+/bundle
+
 # Ignore uploaded files in development.
 /storage/*
 !/storage/.keep
