@@ -24,19 +24,15 @@ RUN npm install -g yarn
 
 ENV HOME_PATH /app
 
-ENV BUNDLE_PATH /nguoimexe_ver2/bundle
-
 RUN mkdir $HOME_PATH
 
 WORKDIR $HOME_PATH
 
-COPY Gemfile Gemfile.lock ./
+COPY . $HOME_PATH
 
 RUN bundle install
 
-COPY . .
-
-RUN app/bin/webpack
+RUN /app/bin/webpack
 
 EXPOSE 3000
 ```
@@ -50,15 +46,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-RAILS
+    working_dir: /app
+    command: ./rails.sh
     volumes:
       - .:/app
-      - bundle:/bundle
+    env_file: .env
     environment:
       RAILS_ENV: development
       PG_PASS: password
       PG_USER: congnt
       PG_DB: demo_development
-    command: bundle exec rails s -b '0.0.0.0'
     depends_on:
       - db
 
@@ -72,12 +69,13 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_USER:     congnt
       POSTGRES_DATABASE: demo_development
+      POSTGRES_ROOT_PASSWORD: password
 
   web:
     image: nginx
     command: nginx -g 'daemon off;'
     volumes:
-      - /default.conf:/etc/nginx/conf.d/default.conf
+      - ./default.conf:/etc/nginx/conf.d/default.conf
     ports:
       - 80:80
       - 443:443
@@ -91,29 +89,59 @@ volumes:
     driver: local
 ```
 
-## Docker-machine & Digital Ocean
-There are essentially two things that we need to deploy a container for a web application into the wild
-- 1) A docker host server to run the container
-- 2) An image to download or a Dockerfile to build the image
-
-Docker provides us with a really nice tool for building docker hosts easily in quite a few hosting providers. For this tutorial, we’re going to host with Digital Ocean (that link will get you a $10 credit for signing up) and creating our host using docker-machine. You’ll need to sign up with digital ocean before we begin because you’ll need to grab your API token. Once you have your account you can go here to generate a new API token.
-
-I have my token store in the environment variable DO_TOKEN (you can set that for yourself using export DO_TOKEN="YOUR_TOKEN". Now that we have our API token, we can use docker-machine to actually create a droplet for us and set it up to be a docker host for us.
-
-```
-docker-machine create --driver=digitalocean --digitalocean-access-token=$DO_TOKEN --digitalocean-size=1gb digitalocean_name
-```
-
-Now we have our first Docker host running “in the cloud” 😀. There are a lot more configuration values that you can pass to the digital ocean driver, so check those out in the [Docker docs.](https://docs.docker.com/machine/drivers/digital-ocean/)
-
-After our machine is up and running we’ll want to set that as our active machine using the env command docker-machine gives us:
+## Provisioning a Dockerized Host Using Docker Machine
+### Create new Docker host
+- 1. Generate a new API
+  -  Token at https://cloud.digitalocean.com/settings/api/tokens.
+- 2. Set the DO token
+  - `export DOTOKEN=<your generated token>`
+- 3. Create the machine
+  - Resource: https://docs.docker.com/machine/drivers/digital-ocean/
 
 ```
-eval $(docker-machine env blog)
+docker-machine create \
+  --driver digitalocean \
+  --digitalocean-access-token=$DOTOKEN \
+  --digitalocean-size "4gb" \
+    your_name
 ```
 
-## Deploying with Docker
+**How can I attach docker-machine to an existing Droplet created with another docker-machine**
+
+Docker Machine has a generic driver that you can use to connect to an existing Docker remote host (replace the stubbed placeholders with your info):
+
+Docs: https://docs.docker.com/machine/drivers/generic/
 
 ```
- docker-compose up
- ```
+docker-machine create \
+    --driver=generic \
+    --generic-ip-address=IP_ADDRESS \
+    --generic-ssh-user=USERNAME \
+    --generic-ssh-key=PATH_TO_SSH_KEY \
+    --generic-ssh-port=PORT \
+        MACHINE_NAME
+```
+
+> You need to be able to SSH in with the key you provide for it to connect. Also, you’ll need to make sure port 2376 is open (ufw allow 2376 in Debian/Ubuntu) and that you can use passwordless sudo (add %sudo   ALL=(ALL) NOPASSWD:ALL to /etc/sudoers).
+
+## Connect your shell to the new machine
+
+First connect the Docker client to the Docker host you created previously.
+
+`eval "$(docker-machine env machine_name)"`
+
+Alternatively, you can activate it by using this command:
+
+`docker-machine use machine-name`
+
+> Tip When working with multiple Docker hosts, the docker-machine use command is the easiest method of switching from one to the other.
+
+## Creating Docker Containers on a Remote Dockerized Host
+
+```
+docker run -d -p 8080:80 --name httpserver nginx
+```
+
+In this command, we’re mapping port 80 in the Nginx container to port 8080 on the Dockerized host so that we can access the default Nginx page from anywhere.
+
+If the command executed successfully, you will be able to access the default Nginx page by pointing your Web browser to http://docker_machine_ip:8080.
