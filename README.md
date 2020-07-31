@@ -145,3 +145,11 @@ docker run -d -p 8080:80 --name httpserver nginx
 In this command, we’re mapping port 80 in the Nginx container to port 8080 on the Dockerized host so that we can access the default Nginx page from anywhere.
 
 If the command executed successfully, you will be able to access the default Nginx page by pointing your Web browser to http://docker_machine_ip:8080.
+
+
+## Refs
+[how-can-i-attach-docker-machine-to-an-existing-droplet](https://www.digitalocean.com/community/questions/how-can-i-attach-docker-machine-to-an-existing-droplet-created-with-another-docker-machine)
+
+[how-to-provision-and-manage-remote-docker-hosts-with-docker-machine-on-ubuntu-16-04](https://www.digitalocean.com/community/tutorials/how-to-provision-and-manage-remote-docker-hosts-with-docker-machine-on-ubuntu-16-04)
+
+[https://docs.gitlab.com/ee/install/digitaloceandocker.html](https://docs.gitlab.com/ee/install/digitaloceandocker.html)
