@@ -5,8 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-RAILS
-    working_dir: /app
-    command: ./rails.sh
+    command: ['./rails.sh']
     volumes:
       - .:/app
     env_file: .env
@@ -15,8 +14,6 @@ services:
       PG_PASS: password
       PG_USER: congnt
       PG_DB: demo_development
-    depends_on:
-      - db
 
   db:
     image: postgres:10.6-alpine
@@ -38,8 +35,6 @@ services:
     ports:
       - 80:80
       - 443:443
-    depends_on:
-      - app
 
 volumes:
   db-data:
