@@ -14,11 +14,9 @@ RUN mkdir $HOME_PATH
 
 WORKDIR $HOME_PATH
 
-COPY Gemfile Gemfile.lock ./
+COPY . $HOME_PATH
 
 RUN bundle install
-
-COPY . .
 
 RUN /app/bin/webpack
 
