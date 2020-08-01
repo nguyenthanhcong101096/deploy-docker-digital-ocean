@@ -18,6 +18,10 @@ COPY . $HOME_PATH
 
 RUN bundle install
 
-RUN /app/bin/webpack
+COPY rails.sh ./
+
+RUN chmod 755 ./rails.sh
 
 EXPOSE 3000
+
+CMD ["./rails.sh"]
